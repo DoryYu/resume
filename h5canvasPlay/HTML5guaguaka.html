@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>demo</title>
+	<script src='../js/jquery.min.js'></script>
+	<style>
+		*{padding:0;margin:0;list-style: none;}
+		body{background:#e4393c;}
+		.ggl{position:relative;width:85.6%;height:90px;background:url(ggl.png) no-repeat center center;background-size:53% 100%;}
+		.canvas{position:absolute;top:2px;left:25%;width:50%;height:82px;line-height:82px;text-align: center;z-index:2;}
+		.info{position:absolute;top:2px;width:50%;left:25%;text-align: center;height:82px;}
+		.info span{display:block;font-size:18px;}
+		#prompt{line-height:40px;}
+		.btn{position:relative;width:50%;height:35px;line-height: 35px;background: #df412b;color:#fff;border-radius: 6px;margin: 0 auto;z-index:1;}
+		.num{width:100%;height:20px;line-height: 30px;text-align: center;font-size: 14px;margin-top: 5%;}
+		#ok,#no{display:none;}
+
+	</style>
+</head>
+<body>
+	<!-- 刮开后看到里面的中奖内容 -->
+    <div id='top' class='ggl'>
+    	<div id='prize' class='info'>
+    		<span id='prompt'></span>
+    		<span class='btn' id='ok'>领取奖品</span>
+    		<span class='btn' id='no'>再来一次</span>
+    	</div>
+    	<canvas id='canvas1' class='canvas'></canvas>
+    </div>
+    <!-- 剩下的刮卡次数 -->
+    <div class='num'>
+    	您还有<span class='num1'></span>次刮卡机会
+    </div>
+<script>
+// 第一步 
+  var c1;  //画布 canvas
+  var ctx; // 绘制环境
+  var ismousedown;   //表示用户是否按下鼠标
+  var isok;  //表示是否已经刮了一半
+
+// 第二步
+// 页面加载初始化
+	window.onload = function(){
+	   c1 = document.getElementById('canvas1');
+	   ctx = c1.getContext('2d');
+	   c1.width = c1.clientWidth;
+	   c1.height = c1.clientHeight;
+	   c1.addEventListener('mousemove',eventMove);
+	   c1.addEventListener('mousedown',eventdown);
+	   c1.addEventListener('mouseup',eventup);
+	  // 初始化
+	  initCanvas();
+	  initdd();
+	}
+// 第三步
+// 初始化画布，画灰色的矩形
+   function initCanvas(){
+   	  ctx.globalCompositeOperation = 'source-over';
+   	  ctx.fillStyle = '#999';
+   	  // 绘制实心矩形
+   	  ctx.fillRect(0,0,c1.clientWidth,c1.clientHeight);
+   	  ctx.font = 'Bold 30px Microsoft';
+   	  ctx.textAlign = 'center';
+   	  ctx.fillStyle  = '#ddd';
+   	  ctx.fillText('刮一刮',c1.width/2,c1.height/2);
+   	    // 在源图像外显示目标图像
+   	  ctx.globalCompositeOperation = 'destination-out';
+   }
+// 第四步
+// 鼠标按下
+    function eventdown(e){
+    	e.preventDefault();
+    	ismousedown = true;
+    }
+// 第五步
+// 鼠标抬起
+   function eventup(e){
+   		e.preventDefault();
+   		var a = ctx.getImageData(0,0,c1.width,c1.height);
+   		console.log(a);
+   		var j = 0;
+   		for(var i=0;i<a.data.length;i+=4){
+   			if(a.data[i]==0){
+   				j++;
+   			}
+   		}
+   		if(j>a.data.length/8){
+   			isok = 1;
+   		}
+   		// 设置ismousedown为false
+   		ismousedown = false;
+   }
+//  第六步
+// evnetMove   移动事件
+	function eventMove(e){
+		e.preventDefault();
+		// 如果ismousedown 为true 表示鼠标已经按下
+		if(ismousedown){
+		    var offsetX = c1.offsetLeft;
+		    var offsetY = c1.offsetTop;
+		    var x=(e.clientX + document.body.scrollLeft -offsetX ||e.pageX||0);
+		    var y =(e.clientY + document.body.scrollTop -offsetY||e.pageY||0);
+		    // 画圆形
+		    ctx.beginPath();
+		    ctx.arc(x,y,12,0,Math.PI*2,true);
+		    ctx.fill();
+	    }
+		// 如果isok是true
+		if(isok){
+			var btn = document.getElementsByClassName('btn');
+			for(var i=0;i<btn.length;i++){
+				btn[i].style.zIndex = '3';
+			}
+		}
+	}
+	
+// 第七步
+// 控制刮卡次数
+	var t=1;
+	// 初始化所有数据并且随机中奖概率
+	var initdd = function(){
+		$('.num1').html(4-t);
+		function getRandomNum(a,b){
+			return (Math.floor(Math.random()*(b-a)+a));
+		}
+		var r = getRandomNum(1,1000);
+		 var btn = document.getElementsByClassName('btn');
+			for(var i=0;i<btn.length;i++){
+				btn[i].style.zIndex = '1';
+			}
+
+		// 找到id为ok的span将它隐藏
+		document.getElementById('ok').style.display = 'none';
+		// 找到id为no的span将它隐藏
+		document.getElementById('no').style.display = 'none';
+		// 控制中奖概率
+		isok = 0;
+		if(r<10){
+			$('#prompt').html('恭喜你中奖了!');
+			$('#ok').css('display','block');
+			$('#ok').click(function(){
+				alert('不好意思，奖品领完了!');
+			})
+		}else{
+			$('#prompt').html('很遗憾，未中奖!');
+			$('#no').css('display','block');
+		}
+	}
+// 第八步
+// 没有中奖再来一次
+    $('#no').click(function(){
+    	if(t>3){
+    		alert('您的次数已经用完!');
+    	}else{
+    		t++;
+    		// 初始化按钮
+    		$('#no').css('display','none');
+    		$('#ok').css('display','none');
+    		window.onload();
+    		initCanvas();
+    	}
+    })
+
+
+
+
+
+
+
+
+
+
+</script>
+</body>
+</html>
